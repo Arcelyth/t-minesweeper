@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use std::{
     io::{self, Write, stdout},
     time::Instant,
@@ -5,6 +7,8 @@ use std::{
 
 use crate::config::*;
 use crate::terminal::screen::*;
+use crate::app::*;
+use crate::error::GameError;
 use crossterm::style::Stylize;
 use rand::Rng;
 
@@ -16,11 +20,12 @@ enum Item {
 }
 
 pub struct Game {
+    start: Instant,
     first: bool,
-    screen: Screen,
     config: Config,
     world: Vec<Vec<Item>>,
     board: Vec<Vec<bool>>,
+    draw_mine: bool,
 }
 
 impl Game {
@@ -28,27 +33,25 @@ impl Game {
         // init world
         let world: Vec<Vec<Item>> = vec![vec![Item::Space; cfg.col]; cfg.row];
         // init screen
-        let screen = Screen::new();
         // init board
         let board: Vec<Vec<bool>> = vec![vec![false; cfg.col]; cfg.row];
 
         Self {
+            start: Instant::now(),
             first: true,
-            screen: screen,
             config: cfg,
             world: world,
             board: board,
+            draw_mine: false,
         }
     }
 
     pub fn generate(&mut self) {
         self.generate_mine();
         self.generate_number();
-        self.screen.clear_screen();
-        stdout().flush();
     }
 
-    pub fn draw(&self, all: bool) {
+    pub fn draw(&self, all: bool, screen: &Screen) {
         let cfg = &self.config;
         let world = &self.world;
         let board = &self.board;
@@ -78,7 +81,7 @@ impl Game {
         h.push('Y');
         h.push('\n');
         let color_h = h.dark_red().to_string();
-        self.screen.print(color_h).unwrap();
+        screen.print(color_h).unwrap();
 
         for i in 0..cfg.row {
             let mut line = (i + 1).to_string().dark_blue().to_string();
@@ -100,10 +103,10 @@ impl Game {
                 line.push(' ');
             }
             line.push('\n');
-            self.screen.print(line).unwrap();
+            screen.print(line).unwrap();
         }
 
-        self.screen.print("X\n\n".dark_blue().to_string()).unwrap();
+        screen.print("X\n\n".dark_blue().to_string()).unwrap();
     }
 
     fn generate_mine(&mut self) {
@@ -172,84 +175,57 @@ impl Game {
         }
     }
 
-    pub fn run(&mut self) {
-        let start = Instant::now();
+    pub fn handle_enter(&mut self, input: &String, screen: &mut Screen, status: &mut Status) -> Result<(), GameError> {
         let cfg = self.config;
-        loop {
-            self.gprint("Input X: ");
-            let mut input1 = String::new();
-            io::stdin().read_line(&mut input1).unwrap();
-            let x;
-            match input1.trim().parse::<i32>() {
-                Ok(num) => x = num - 1,
-                Err(_) => {
-                    self.gprint("please input a number\n");
-                    continue;
-                }
-            };
+        let parts: Vec<&str> = input.trim().split_whitespace().collect();
 
-            self.gprint("Input Y: ");
-
-            let mut input2 = String::new();
-            io::stdin().read_line(&mut input2).unwrap();
-            let y;
-            match input2.trim().parse::<i32>() {
-                Ok(num) => y = num - 1,
-                Err(_) => {
-                    self.gprint("please input a number\n");
-                    continue;
-                }
-            };
-
-            if self.first {
-                self.world = vec![vec![Item::Space; cfg.col]; cfg.row];
-                self.generate_mine_by_pos(x as usize, y as usize);
-                self.generate_number();
-            }
-
-            self.first = false;
-
-            if x >= 0 && x < cfg.row as i32 && y >= 0 && y < cfg.col as i32 {
-                match self.world[x as usize][y as usize] {
-                    Item::Mine => {
-                        self.screen.clear_screen().unwrap();
-                        self.screen.set_pos(0, 0).unwrap();
-
-                        self.draw(true);
-                        self.screen.die().unwrap();
-                        break;
-                    }
-                    Item::Number(num) => {
-                        if self.board[x as usize][y as usize] {
-                            self.gprint("already exploded\n");
-                            continue;
-                        }
-                        self.board[x as usize][y as usize] = true;
-                        self.spread(x, y);
-                    }
-                    _ => (),
-                }
-            } else {
-                self.gprint("invalid number\n");
-            }
-
-            if self.judge() {
-                let dura = start.elapsed();
-                self.screen.clear_screen().unwrap();
-                self.screen.set_pos(0, 0).unwrap();
-
-                self.draw(true);
-                self.screen.success(dura).unwrap();
-                break;
-            }
-            self.screen.clear_screen().unwrap();
-            self.draw(false);
+        if parts.len() != 2 {
+            return Err(GameError::InvalidInput);
         }
-    }
 
-    pub fn gprint(&self, s: &str) {
-        self.screen.print(s.to_string()).unwrap();
-        stdout().flush().unwrap();
+        let x = parts[0]
+            .parse::<i32>()? - 1;
+
+        let y = parts[1]
+            .parse::<i32>()? - 1;
+
+        if self.first {
+            self.world = vec![vec![Item::Space; cfg.col]; cfg.row];
+            self.generate_mine_by_pos(x as usize, y as usize);
+            self.generate_number();
+        }
+
+        self.first = false;
+
+        if x >= 0 && x < cfg.row as i32 && y >= 0 && y < cfg.col as i32 {
+            match self.world[x as usize][y as usize] {
+                Item::Mine => {
+                    screen.clear_screen().unwrap();
+                    screen.set_pos(0, 0).unwrap();
+                    self.draw_mine = true; 
+                    *status = Status::Failed;
+                }
+                Item::Number(num) => {
+                    if self.board[x as usize][y as usize] {
+                        return Err(GameError::AlreadyExploded);
+                    }
+                    self.board[x as usize][y as usize] = true;
+                    self.spread(x, y);
+                }
+                _ => (),
+            }
+        } else {
+            return Err(GameError::InvalidInput);
+
+        }
+
+        if self.judge() {
+            screen.clear_screen().unwrap();
+            screen.set_pos(0, 0).unwrap();
+            self.draw_mine = true; 
+            *status = Status::Success;
+        }
+        Ok(())
     }
 
     pub fn spread(&mut self, i: i32, j: i32) {
@@ -303,7 +279,6 @@ impl Item {
     pub fn render(&self) -> char {
         match self {
             Item::Space => '·',
-
             Item::Number(0) => ' ',
             Item::Number(num) => num.to_string().chars().next().unwrap(),
             Item::Mine => 'X',
@@ -313,7 +288,7 @@ impl Item {
 
 fn render_color(c: char) -> String {
     match c {
-        '1' => '1'.to_string().blue().to_string(),
+        '1' => '1'.to_string().dark_blue().to_string(),
         '2' => '2'.to_string().dark_green().to_string(),
         '3' => '3'.to_string().dark_red().to_string(),
         '4' => '4'.to_string().dark_blue().to_string(),

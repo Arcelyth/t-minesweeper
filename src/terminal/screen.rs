@@ -32,7 +32,6 @@ impl Screen {
     pub fn init(&self) {
         self.clear_screen().unwrap();
         self.set_pos(0, 0).unwrap();
-        self.welcome().unwrap();
         stdout().flush().unwrap();
     }
 
@@ -58,38 +57,6 @@ impl Screen {
 
     fn queue_command<T: Command>(command: T) -> Result<(), Error> {
         queue!(stdout(), command)?;
-        Ok(())
-    }
-
-    fn welcome(&self) -> Result<(), Error> {
-        self.banner()?;
-        self.print("\n\n\n\n".to_string()).unwrap();
-        Ok(())
-    }
-
-    fn banner(&self) -> Result<(), Error> {
-        self.print(
-            "████████╗   ███╗   ███╗██╗███╗   ██╗███████╗███████╗██╗    ██╗███████╗███████╗██████╗ ███████╗██████╗ \n".to_string()
-        )?;
-        self.print(
-            "╚══██╔══╝   ████╗ ████║██║████╗  ██║██╔════╝██╔════╝██║    ██║██╔════╝██╔════╝██╔══██╗██╔════╝██╔══██╗\n".to_string()
-        )?;
-        self.print(
-            "   ██║█████╗██╔████╔██║██║██╔██╗ ██║█████╗  ███████╗██║ █╗ ██║█████╗  █████╗  ██████╔╝█████╗  ██████╔╝\n".to_string()
-        )?;
-        self.print(
-            "   ██║╚════╝██║╚██╔╝██║██║██║╚██╗██║██╔══╝  ╚════██║██║███╗██║██╔══╝  ██╔══╝  ██╔═══╝ ██╔══╝  ██╔══██╗\n".to_string()
-        )?;
-        self.print(
-            "   ██║      ██║ ╚═╝ ██║██║██║ ╚████║███████╗███████║╚███╔███╔╝███████╗███████╗██║     ███████╗██║  ██║\n".to_string()
-        )?;
-        self.print(
-            "   ╚═╝      ╚═╝     ╚═╝╚═╝╚═╝  ╚═══╝╚══════╝╚══════╝ ╚══╝╚══╝ ╚══════╝╚══════╝╚═╝     ╚══════╝╚═╝  ╚═╝\n".to_string()
-        )?;
-        self.print(
-            "                                                                                                      \n".to_string()
-        )?;
-        stdout().flush()?;
         Ok(())
     }
 

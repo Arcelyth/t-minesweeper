@@ -1,14 +1,11 @@
 #![allow(dead_code)]
 
-use std::{
-    io::{self, Write, stdout},
-    time::Instant,
-};
+use std::time::Instant;
 
-use crate::config::*;
-use crate::terminal::screen::*;
 use crate::app::*;
+use crate::config::*;
 use crate::error::GameError;
+use crate::terminal::screen::*;
 use crossterm::style::Stylize;
 use rand::Rng;
 
@@ -20,12 +17,12 @@ enum Item {
 }
 
 pub struct Game {
-    start: Instant,
+    pub start: Instant,
     first: bool,
     config: Config,
     world: Vec<Vec<Item>>,
     board: Vec<Vec<bool>>,
-    draw_mine: bool,
+    pub draw_mine: bool,
 }
 
 impl Game {
@@ -84,7 +81,7 @@ impl Game {
         screen.print(color_h).unwrap();
 
         for i in 0..cfg.row {
-            let mut line = (i + 1).to_string().dark_blue().to_string();
+            let mut line = (i + 1).to_string().cyan().to_string();
             if i + 1 < 10 {
                 line.push(' ');
             }
@@ -106,7 +103,7 @@ impl Game {
             screen.print(line).unwrap();
         }
 
-        screen.print("X\n\n".dark_blue().to_string()).unwrap();
+        screen.print("X\n\n".cyan().to_string()).unwrap();
     }
 
     fn generate_mine(&mut self) {
@@ -175,7 +172,11 @@ impl Game {
         }
     }
 
-    pub fn handle_enter(&mut self, input: &String, screen: &mut Screen, status: &mut Status) -> Result<(), GameError> {
+    pub fn handle_enter(
+        &mut self,
+        input: &String,
+        status: &mut Status,
+    ) -> Result<(), GameError> {
         let cfg = self.config;
         let parts: Vec<&str> = input.trim().split_whitespace().collect();
 
@@ -183,11 +184,9 @@ impl Game {
             return Err(GameError::InvalidInput);
         }
 
-        let x = parts[0]
-            .parse::<i32>()? - 1;
+        let x = parts[0].parse::<i32>()? - 1;
 
-        let y = parts[1]
-            .parse::<i32>()? - 1;
+        let y = parts[1].parse::<i32>()? - 1;
 
         if self.first {
             self.world = vec![vec![Item::Space; cfg.col]; cfg.row];
@@ -200,12 +199,10 @@ impl Game {
         if x >= 0 && x < cfg.row as i32 && y >= 0 && y < cfg.col as i32 {
             match self.world[x as usize][y as usize] {
                 Item::Mine => {
-                    screen.clear_screen().unwrap();
-                    screen.set_pos(0, 0).unwrap();
-                    self.draw_mine = true; 
+                    self.draw_mine = true;
                     *status = Status::Failed;
                 }
-                Item::Number(num) => {
+                Item::Number(_) => {
                     if self.board[x as usize][y as usize] {
                         return Err(GameError::AlreadyExploded);
                     }
@@ -216,13 +213,10 @@ impl Game {
             }
         } else {
             return Err(GameError::InvalidInput);
-
         }
 
         if self.judge() {
-            screen.clear_screen().unwrap();
-            screen.set_pos(0, 0).unwrap();
-            self.draw_mine = true; 
+            self.draw_mine = true;
             *status = Status::Success;
         }
         Ok(())
@@ -288,7 +282,7 @@ impl Item {
 
 fn render_color(c: char) -> String {
     match c {
-        '1' => '1'.to_string().dark_blue().to_string(),
+        '1' => '1'.to_string().blue().to_string(),
         '2' => '2'.to_string().dark_green().to_string(),
         '3' => '3'.to_string().dark_red().to_string(),
         '4' => '4'.to_string().dark_blue().to_string(),
@@ -297,7 +291,7 @@ fn render_color(c: char) -> String {
         '7' => '7'.to_string().black().to_string(),
         '8' => '8'.to_string().grey().to_string(),
         '·' => '·'.to_string().white().to_string(),
-        'X' => 'X'.to_string().dark_magenta().to_string(),
+        'X' => 'X'.to_string().grey().to_string(),
         ' ' => ' '.to_string(),
         _ => "".to_string(),
     }

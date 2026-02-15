@@ -26,7 +26,6 @@ fn main() {
     let screen = Screen::new();
     screen.init();
     let mut app = App::new();
-
     loop {
         screen.clear_screen().unwrap();
         screen.set_pos(0, 0).unwrap();
@@ -39,40 +38,17 @@ fn main() {
                 continue;
             }
             match app.status {
-                Status::Welcome => match key.code {
-                    KeyCode::Char('q') => {
-                        app.should_exit = true;
-                    }
-                    KeyCode::Char('e') => {
-                        let mut g = Game::new(Config::easy());
-                        g.generate();
-                        app.game = Some(g);
-                        app.status = Status::Game;
-                    }
-                    KeyCode::Char('n') => {
-                        let mut g = Game::new(Config::normal());
-                        g.generate();
-                        app.game = Some(g);
-                        app.status = Status::Game;
-                    }
-                    KeyCode::Char('h') => {
-                        let mut g = Game::new(Config::hard());
-                        g.generate();
-                        app.game = Some(g);
-                        app.status = Status::Game;
-                    }
-                    _ => {}
-                },
                 Status::Game => match key.code {
                     KeyCode::Char('q') => {
                         app.status = Status::Welcome;
                     }
                     KeyCode::Enter => {
                         let game = app.game.as_mut().ok_or(RenderError::NoGame).unwrap();
-                        let res =
-                            game.handle_enter(&app.input.content, &mut app.screen, &mut app.status);
+                        let res = game.handle_enter(&app.input.content, &mut app.status);
                         if let Err(e) = res {
-                            app.print(format!("{}\n", e).as_str());
+                            app.input.error_msg = format!("{:?}", e).into();
+                        } else {
+                            app.input.error_msg = "".into();
                         }
                         app.input.clear();
                     }
@@ -82,8 +58,13 @@ fn main() {
                     _ => {}
                 },
                 _ => match key.code {
-                    KeyCode::Char('q') => {
-                        app.should_exit = true;
+                    KeyCode::Char(c) => {
+                        app.input.content.push(c);
+                    }
+
+                    KeyCode::Enter => {
+                        handle_command(&mut app);
+                        app.input.clear();
                     }
                     _ => {}
                 },
@@ -94,5 +75,38 @@ fn main() {
             break;
         }
     }
+}
 
+fn handle_command(app: &mut App) {
+    match app.input.content.trim() {
+        "q" => {
+            match app.status {
+                Status::Welcome => {
+                    app.should_exit = true;
+                }
+                _ => {
+                    app.status = Status::Welcome;
+                }
+            }
+        }
+        "e" => {
+            let mut g = Game::new(Config::easy());
+            g.generate();
+            app.game = Some(g);
+            app.status = Status::Game;
+        }
+        "n" => {
+            let mut g = Game::new(Config::normal());
+            g.generate();
+            app.game = Some(g);
+            app.status = Status::Game;
+        }
+        "h" => {
+            let mut g = Game::new(Config::hard());
+            g.generate();
+            app.game = Some(g);
+            app.status = Status::Game;
+        }
+        _ => {}
+    }
 }

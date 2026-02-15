@@ -1,3 +1,9 @@
+use crossterm::{
+    style::Stylize,
+};
+use std::time::Instant;
+
+
 use crate::app::*;
 use crate::error::*;
 use crate::terminal::screen::*;
@@ -15,16 +21,28 @@ pub fn render(app: &App) -> Result<(), RenderError> {
         }
         Status::Game => {
             let game = app.game.as_ref().ok_or(RenderError::NoGame)?;
-            game.draw(false, &app.screen);
+            game.draw(game.draw_mine, &app.screen);
             app.print("\n\n\n\n");
-            app.print("Input position (X Y)");
-            app.print(&app.input.content);
+            app.print(&"Input position (X Y)\n".green().to_string());
+            app.print(&"Enter q back to the menu\n".green().to_string());
+            app.print(&format!("{}\n", app.input.error_msg).dark_red().to_string());
         }
         Status::Success => {
-            app.print(&get_win());
+            let now = Instant::now();
+            let game = app.game.as_ref().ok_or(RenderError::NoGame)?;
+            let dura = now - game.start; 
+            game.draw(game.draw_mine, &app.screen);
+            app.print("\n\n\n\n");
+            app.print(&"You Win!\n".green().to_string());
+            app.print(&format!("Use time: {}\n", format_duration(dura)).green().to_string());
+            app.print(&"Enter q back to the menu\n".green().to_string());
         }
         Status::Failed => {
-            app.print(&get_die());
+            let game = app.game.as_ref().ok_or(RenderError::NoGame)?;
+            game.draw(game.draw_mine, &app.screen);
+            app.print("\n\n\n\n");
+            app.print(&"You Lose!\n".red().to_string());
+            app.print(&"Enter q back to the menu\n".red().to_string());
         }
     }
     draw_box(&app.screen, box_x, box_y, box_w, box_h);
@@ -66,13 +84,12 @@ pub fn draw_text_in_box(screen: &Screen, x: u16, y: u16, width: u16, text: &str)
 }
 
 fn get_manual() -> String {
-    r#"
-        Enter e to select EASY mode (8 x 8 x 10)
-        Enter n to select NORMAL mode (16 x 16 x 40)
-        Enter h to select HARD mode (16 x 30 x 99)
-        Enter q to QUIT game
-    "#
-    .to_string()
+    format!("{}\n{}\n{}\n{}\n", 
+        "Enter e to select EASY mode (8 x 8 x 10)".green(),
+        "Enter n to select NORMAL mode (16 x 16 x 40)".blue(),
+        "Enter h to select HARD mode (16 x 30 x 99)".red(),
+        "Enter q to QUIT game".magenta(),
+    )
 }
 
 fn get_banner() -> String {
@@ -87,36 +104,20 @@ fn get_banner() -> String {
     "#.to_string()
 }
 
-fn get_die() -> String {
-    r#"
- █████ █████    ███████    █████  █████    ██████████   █████ ██████████
-░░███ ░░███   ███░░░░░███ ░░███  ░░███    ░░███░░░░███ ░░███ ░░███░░░░░█
- ░░███ ███   ███     ░░███ ░███   ░███     ░███   ░░███ ░███  ░███  █ ░ 
-  ░░█████   ░███      ░███ ░███   ░███     ░███    ░███ ░███  ░██████   
-   ░░███    ░███      ░███ ░███   ░███     ░███    ░███ ░███  ░███░░█   
-    ░███    ░░███     ███  ░███   ░███     ░███    ███  ░███  ░███ ░   █
-    █████    ░░░███████░   ░░████████      ██████████   █████ ██████████
-   ░░░░░       ░░░░░░░      ░░░░░░░░      ░░░░░░░░░░   ░░░░░ ░░░░░░░░░░ 
-                                                                        
-                                                                        
-                                                                        
-    "#
-    .to_string()
-}
-
-fn get_win() -> String {
-    r#"
- █████ █████    ███████    █████  █████    █████   ███   █████ █████ ██████   █████
-░░███ ░░███   ███░░░░░███ ░░███  ░░███    ░░███   ░███  ░░███ ░░███ ░░██████ ░░███ 
- ░░███ ███   ███     ░░███ ░███   ░███     ░███   ░███   ░███  ░███  ░███░███ ░███ 
-  ░░█████   ░███      ░███ ░███   ░███     ░███   ░███   ░███  ░███  ░███░░███░███ 
-   ░░███    ░███      ░███ ░███   ░███     ░░███  █████  ███   ░███  ░███ ░░██████ 
-    ░███    ░░███     ███  ░███   ░███      ░░░█████░█████░    ░███  ░███  ░░█████ 
-    █████    ░░░███████░   ░░████████         ░░███ ░░███      █████ █████  ░░█████
-   ░░░░░       ░░░░░░░      ░░░░░░░░           ░░░   ░░░      ░░░░░ ░░░░░    ░░░░░ 
-                                                                                   
-                                                                                   
-                                                                                   
-    "#
-    .to_string()
+fn format_duration(d: std::time::Duration) -> String {
+    let total_secs = d.as_secs();
+    let hours = total_secs / 3600;
+    let minutes = (total_secs % 3600) / 60;
+    let seconds = total_secs % 60;
+    let millis = d.subsec_millis();
+    
+    if hours > 0 {
+        format!("{}h {}m {}s", hours, minutes, seconds)
+    } else if minutes > 0 {
+        format!("{}m {}s", minutes, seconds)
+    } else if seconds > 0 {
+        format!("{}.{:03}s", seconds, millis)
+    } else {
+        format!("{}ms", millis)
+    }
 }

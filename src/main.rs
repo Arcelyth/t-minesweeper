@@ -6,8 +6,8 @@ use game::*;
 mod config;
 use config::*;
 
-mod terminal;
-use terminal::{input::*, screen::*};
+mod screen;
+use screen::*;
 
 mod app;
 use app::*;
@@ -46,7 +46,7 @@ fn main() {
                         let game = app.game.as_mut().ok_or(RenderError::NoGame).unwrap();
                         let res = game.handle_enter(&app.input.content, &mut app.status);
                         if let Err(e) = res {
-                            app.input.error_msg = format!("{:?}", e).into();
+                            app.input.error_msg = format!("{}", e).into();
                         } else {
                             app.input.error_msg = "".into();
                         }
@@ -65,7 +65,7 @@ fn main() {
                     KeyCode::Enter => {
                         let res = handle_command(&mut app);
                         if let Err(e) = res {
-                            app.input.error_msg = format!("{:?}", e).into();
+                            app.input.error_msg = format!("{}", e).into();
                         } else {
                             app.input.error_msg = "".into();
                         }
@@ -125,9 +125,10 @@ fn handle_command(app: &mut App) -> Result<(), AppError> {
             app.game = Some(g);
             app.status = Status::Game;
         }
-        _ => {
-            return Err(AppError::UnknownCmd);
+        c if c != "" => {
+            return Err(AppError::UnknownCmd(c.into()));
         }
+        _ => {}
     }
     Ok(())
 }

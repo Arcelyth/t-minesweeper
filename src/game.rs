@@ -5,7 +5,7 @@ use std::time::Instant;
 use crate::app::*;
 use crate::config::*;
 use crate::error::GameError;
-use crate::terminal::screen::*;
+use crate::screen::*;
 use crossterm::style::Stylize;
 use rand::Rng;
 
@@ -19,7 +19,7 @@ enum Item {
 pub struct Game {
     pub start: Instant,
     first: bool,
-    config: Config,
+    pub config: Config,
     world: Vec<Vec<Item>>,
     board: Vec<Vec<bool>>,
     pub draw_mine: bool,

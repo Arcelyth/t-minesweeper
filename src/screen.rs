@@ -12,8 +12,7 @@ use crossterm::{
     terminal::{self, Clear, ClearType},
 };
 
-use super::input::input;
-use crate::config::*;
+
 
 pub struct Screen {
     width: u16,

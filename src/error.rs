@@ -1,4 +1,5 @@
 use std::num::ParseIntError;
+use std::sync::Arc;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -19,8 +20,8 @@ pub enum GameError {
 
 #[derive(Error, Debug)]
 pub enum AppError {
-    #[error("Unknown command")]
-    UnknownCmd,
+    #[error("Unknown command: {0}")]
+    UnknownCmd(Arc<str>),
     #[error("Parse int error")]
     ParseIntErr(#[from] ParseIntError),
     #[error("Invalid custom size")]

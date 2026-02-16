@@ -1,6 +1,6 @@
 use std::io::{stdout, Write};
 use crate::game::*;
-use crate::terminal::screen::*;
+use crate::screen::*;
 use crate::input::*;
 
 #[derive(Clone, Copy)]

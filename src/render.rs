@@ -6,11 +6,11 @@ use std::time::Instant;
 
 use crate::app::*;
 use crate::error::*;
-use crate::terminal::screen::*;
+use crate::screen::*;
 
 pub fn render(app: &App) -> Result<(), RenderError> {
     let box_x = 0;
-    let box_y = 26;
+    let mut box_y = 2;
     let box_w = 40;
     let box_h = 3;
     match app.status {
@@ -19,14 +19,16 @@ pub fn render(app: &App) -> Result<(), RenderError> {
             app.print("\n\n\n\n");
             app.print(&get_manual());
             app.print(&format!("{}\n", app.input.error_msg).dark_red().to_string());
+            box_y += 18;
         }
         Status::Game => {
             let game = app.game.as_ref().ok_or(RenderError::NoGame)?;
             game.draw(game.draw_mine, &app.screen);
-            app.print("\n\n\n\n");
-            app.print(&"Input position (X Y)\n".green().to_string());
+            app.print("\n\n\n");
+            app.print(&"Input position: <X> <Y>\n".green().to_string());
             app.print(&"Enter q back to the menu\n".green().to_string());
             app.print(&format!("{}\n", app.input.error_msg).dark_red().to_string());
+            box_y += game.config.row + 8;
         }
         Status::Success => {
             let now = Instant::now();
@@ -37,6 +39,7 @@ pub fn render(app: &App) -> Result<(), RenderError> {
             app.print(&"You Win!\n".green().to_string());
             app.print(&format!("Use time: {}\n", format_duration(dura)).green().to_string());
             app.print(&"Enter q back to the menu\n".green().to_string());
+            box_y += game.config.row + 9;
         }
         Status::Failed => {
             let game = app.game.as_ref().ok_or(RenderError::NoGame)?;
@@ -44,11 +47,12 @@ pub fn render(app: &App) -> Result<(), RenderError> {
             app.print("\n\n\n\n");
             app.print(&"You Lose!\n".red().to_string());
             app.print(&"Enter q back to the menu\n".red().to_string());
+            box_y += game.config.row + 8;
         }
     }
-    draw_box(&app.screen, box_x, box_y, box_w, box_h);
+    draw_box(&app.screen, box_x, box_y as u16, box_w, box_h);
 
-    draw_text_in_box(&app.screen, box_x, box_y, box_w, &app.input.content);
+    draw_text_in_box(&app.screen, box_x, box_y as u16, box_w, &app.input.content);
     Ok(())
 }
 

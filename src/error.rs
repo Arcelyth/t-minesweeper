@@ -1,5 +1,5 @@
-use thiserror::Error;
 use std::num::ParseIntError;
+use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum RenderError {
@@ -15,4 +15,14 @@ pub enum GameError {
     ParseIntErr(#[from] ParseIntError),
     #[error("Already exploded")]
     AlreadyExploded,
+}
+
+#[derive(Error, Debug)]
+pub enum AppError {
+    #[error("Unknown command")]
+    UnknownCmd,
+    #[error("Parse int error")]
+    ParseIntErr(#[from] ParseIntError),
+    #[error("Invalid custom size")]
+    InvalidCustom,
 }

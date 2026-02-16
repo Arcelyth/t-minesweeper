@@ -85,46 +85,4 @@ impl Screen {
         self.after()?;
         Ok(())
     }
-
-    pub fn choose(&self) -> Config {
-        self.print(
-            "press e to select EASY mode (8 x 8 x 10)\n"
-                .dark_green()
-                .to_string(),
-        )
-        .unwrap();
-        self.print(
-            "press n to select NORMAL mode (16 x 16 x 40)\n"
-                .dark_cyan()
-                .to_string(),
-        )
-        .unwrap();
-        self.print(
-            "press h to select HARD mode (16 x 30 x 99)\n"
-                .dark_red()
-                .to_string(),
-        )
-        .unwrap();
-        self.print("\n\n\n\n".to_string()).unwrap();
-        stdout().flush().unwrap();
-        let mut cfg: Config = Config::easy();
-        let mut ch;
-        loop {
-            ch = input();
-            if ch == "e".to_string() {
-                cfg = Config::easy();
-                break;
-            } else if ch == "n".to_string() {
-                cfg = Config::normal();
-                break;
-            } else if ch == "h".to_string() {
-                cfg = Config::hard();
-                break;
-            } else if ch == "m".to_string() {
-                cfg = Config::custom();
-                break;
-            }
-        }
-        cfg
-    }
 }

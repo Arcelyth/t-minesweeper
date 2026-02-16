@@ -10,7 +10,7 @@ use crate::terminal::screen::*;
 
 pub fn render(app: &App) -> Result<(), RenderError> {
     let box_x = 0;
-    let box_y = 20;
+    let box_y = 26;
     let box_w = 40;
     let box_h = 3;
     match app.status {
@@ -18,6 +18,7 @@ pub fn render(app: &App) -> Result<(), RenderError> {
             app.print(&get_banner());
             app.print("\n\n\n\n");
             app.print(&get_manual());
+            app.print(&format!("{}\n", app.input.error_msg).dark_red().to_string());
         }
         Status::Game => {
             let game = app.game.as_ref().ok_or(RenderError::NoGame)?;
@@ -84,10 +85,11 @@ pub fn draw_text_in_box(screen: &Screen, x: u16, y: u16, width: u16, text: &str)
 }
 
 fn get_manual() -> String {
-    format!("{}\n{}\n{}\n{}\n", 
+    format!("{}\n{}\n{}\n{}\n{}\n", 
         "Enter e to select EASY mode (8 x 8 x 10)".green(),
         "Enter n to select NORMAL mode (16 x 16 x 40)".blue(),
         "Enter h to select HARD mode (16 x 30 x 99)".red(),
+        "Enter c:<width> <height> <mines> to custom size and mine's number mode".yellow(),
         "Enter q to QUIT game".magenta(),
     )
 }

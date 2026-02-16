@@ -190,7 +190,7 @@ impl Game {
 
         if self.first {
             self.world = vec![vec![Item::Space; cfg.col]; cfg.row];
-            self.generate_mine_by_pos(x as usize, y as usize);
+            self.generate_mine_by_pos(y as usize, x as usize);
             self.generate_number();
         }
 

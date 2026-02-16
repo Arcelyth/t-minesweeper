@@ -63,7 +63,13 @@ fn main() {
                     }
 
                     KeyCode::Enter => {
-                        handle_command(&mut app);
+                        let res = handle_command(&mut app);
+                        if let Err(e) = res {
+                            app.input.error_msg = format!("{:?}", e).into();
+                        } else {
+                            app.input.error_msg = "".into();
+                        }
+
                         app.input.clear();
                     }
                     _ => {}
@@ -77,18 +83,16 @@ fn main() {
     }
 }
 
-fn handle_command(app: &mut App) {
+fn handle_command(app: &mut App) -> Result<(), AppError> {
     match app.input.content.trim() {
-        "q" => {
-            match app.status {
-                Status::Welcome => {
-                    app.should_exit = true;
-                }
-                _ => {
-                    app.status = Status::Welcome;
-                }
+        "q" => match app.status {
+            Status::Welcome => {
+                app.should_exit = true;
             }
-        }
+            _ => {
+                app.status = Status::Welcome;
+            }
+        },
         "e" => {
             let mut g = Game::new(Config::easy());
             g.generate();
@@ -107,6 +111,23 @@ fn handle_command(app: &mut App) {
             app.game = Some(g);
             app.status = Status::Game;
         }
-        _ => {}
+        s if s.starts_with("c:") => {
+            let parts: Vec<&str> = s[2..].trim().split_whitespace().collect();
+
+            if parts.len() != 3 {
+                return Err(AppError::InvalidCustom);
+            }
+            let w = parts[0].parse::<usize>()?;
+            let h = parts[1].parse::<usize>()?;
+            let mines = parts[2].parse::<i32>()?;
+            let mut g = Game::new(Config::new(w, h, mines));
+            g.generate();
+            app.game = Some(g);
+            app.status = Status::Game;
+        }
+        _ => {
+            return Err(AppError::UnknownCmd);
+        }
     }
+    Ok(())
 }

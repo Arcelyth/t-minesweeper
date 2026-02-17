@@ -12,9 +12,9 @@ Minesweeper game in terminal written in Rust.
 
 ## Run
 
-Download source code from release or clone the repository. <br>
+Download source code from releases or clone the repository. <br>
 
 ```bash
-cargo run
+cargo run --release
 ```
 
